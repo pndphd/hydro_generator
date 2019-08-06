@@ -12,8 +12,8 @@ email=pndphd@gmail.com
 
 about=Makes the hydrology file for inSALMO
 
-tracker=github.com
-repository=github.com
+tracker=https://github.com/pndphd/hydro_generator/issues
+repository=https://github.com/pndphd/hydro_generator
 # End of mandatory metadata
 
 # Recommended items:
