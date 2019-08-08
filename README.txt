@@ -1,33 +1,26 @@
-This plugin replicates ArcMaps "Ungenerate" command (http://desktop.arcgis.com/en/arcmap/10.3/tools/coverage-toolbox/ungenerate.htm).
-It takes a shapefile input file and produces a text file with the x,y coordinates of each polygon.  
-The x,y coordinates are preceded by a ID number for each polygon and followed by the word "end" before the next polygon's coordinates
-are printed.  The file ends with another "end" statement.  The following is a example output for a shape file with 4 polygons
-each with 5 vertexes.
+This file takes a vector grid and rasters of depth and velocity and makes an inSALMO hydro file.
+Example bellow:
 
-1     2923.3222656      2084.7429199
-       2917.0759277      2079.6772461
-       2926.8261719      2089.6940918
-       2929.4162598      2089.6560059
-       2918.4470215      2078.3823242
-       2917.0759277      2079.6772461
-END
-3     2936.2717285      2087.4851074
-       2929.4162598      2089.6560059
-       2942.2133789      2087.4470215
-       2942.0610352      2084.7048340
-       2930.1779785      2087.5612793
-       2929.4162598      2089.6560059
-END
-4     2937.0334473      2081.5056152
-       2942.0610352      2084.7048340
-       2941.4516602      2076.0590820
-       2934.9006348      2073.7739258
-       2930.1779785      2087.5612793
-       2942.0610352      2084.7048340
-END
-END
-Instruction
+Line 1
+Line 2
+Flows:	75.0	150.0	
+Cell	D@75	V@75	D@150	V@150	
+1	0.130332946777344	0.412750512361526	0.756332397460938	0.496609389781952	
+2	0	0	0.550721486409505	0.366691589355469				
+3	0	0	0	0			
+4	0	0	1.134698721078726	0.46637654533753			
+5	0.113721838458961	4.8345757824e-05	0.384010314941406	0.020157269202173	
+6	0	0	0	0		
+7	0	0	0	0			
+
+
+
+Instructions
 Peter Dudley
-4/3/2017
-1) Selected a vector grid form the drop down menu.
-2) Select a file destination and name.  The program will append “.Data” to the file name. 
+4/4/2017
+1)	The grid file must have some attributes that are deleteable (if nothing else at least and ID) 
+2)	The rasters should be titled (assuming the flow is 222cms) “V222” and “D222”
+3)	Highlight all the rasters you want to use.
+4)	Chose the grid
+5)	Chose an output location.  The program will append “.Data” to your file name
+6)	Run 

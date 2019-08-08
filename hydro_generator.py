@@ -24,7 +24,7 @@
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction, QFileDialog
-from qgis.core import QgsProject
+from qgis.core import QgsProject, QgsMessageLog
 from qgis.gui import *
 from qgis.analysis import *
 
@@ -33,6 +33,8 @@ from .resources import *
 # Import the code for the dialog
 from .hydro_generator_dialog import inSALMOPluginDialog
 import qgis.utils
+# Add in sciputhon package to sort order of a list later
+import scipy.stats as ss
 import processing
 import os.path
 import os
@@ -185,7 +187,8 @@ class inSALMOPlugin:
                 self.tr(u'&inSALMO'),
                 action)
             self.iface.removeToolBarIcon(action)
-           
+    
+    # Code that allows the select file button to select a file
     def select_output_file(self):
         filename, _filter  = QFileDialog.getSaveFileName(self.dlg, "Select output file ","", '*.Data')
         self.dlg.lineEdit.setText(filename)
@@ -244,7 +247,7 @@ class inSALMOPlugin:
 			#load in ther output file name
             fileName = self.dlg.lineEdit.text()
 			
-            #get ther vector layer you want 
+            #get the vector layer you want form the selection box 
             selectedLayerIndex = self.dlg.comboBox.currentIndex()
             vectorLayer = layers[selectedLayerIndex].layer()
 
@@ -257,35 +260,67 @@ class inSALMOPlugin:
             vectorLayer.dataProvider().deleteAttributes(fList)
             vectorLayer.updateFields()
             vectorLayer.commitChanges()
-
-            #iterate each raster over ther vector layer
+            
+            # Need to sort the rasters by value and type 
+            # Make a list and rank the list in anotehr
+            nameList = []
+            valueList = []
+            j = 0
             for x in range(0, self.dlg.listWidget.count()):
                 if self.dlg.listWidget.item(x).isSelected():
-                    for search_layer in QgsProject.instance().layerTreeRoot().children():
-                        if search_layer.name() == self.dlg.listWidget.item(x).text():
-                            rasterLayer = search_layer.layer()
+                    nameList.append(self.dlg.listWidget.item(x).text())
+                    # velocities come second so add a small amount to the velocity number
+                    if nameList[j][0] == 'V':
+                        valueList.append(float(nameList[j][1:])+0.0001)
+                    else:
+                        valueList.append(float(nameList[j][1:]))
+                    j = j+1
+                    QgsMessageLog.logMessage(str(valueList[j-1]), 'MyPlugin')
+            rank = ss.rankdata(valueList)
+            
 
-                            #get the stats for each grid cell
-                            coverStatistics = QgsZonalStatistics( vectorLayer, rasterLayer)
-                            statistics = coverStatistics.calculateStatistics(None)
-                            vectorLayer.updateFields()
-                            vectorLayer.commitChanges()
-                            
-                            #Get ther fields form the layer
-                            fields = vectorLayer.fields()
-                            fieldNames = [field.name() for field in fields]
-                            
-                            # QgsZonalStatistics will gennerate 3 columns that last one is mean which we want
-                            # rename the last column (mean) to the name we want
-                            vectorLayer.setFieldAlias(len(fieldNames)-1,rasterLayer.name())
-                            
-                            # delete the other 2 fields made by the stats algo (the third to last and second to last)
-                            fList = list()
-                            fList.append(len(fieldNames)-2)
-                            fList.append(len(fieldNames)-3)
-                            vectorLayer.dataProvider().deleteAttributes(fList)
-                            vectorLayer.updateFields()
-                            vectorLayer.commitChanges()
+            #iterate each raster over ther vector layer
+            # go through all layers in the list box
+            # Pass over the entire set each time looking for whatever rank number you are on
+            m = 0
+            for x in range(0, self.dlg.listWidget.count()):
+                m = m + 1
+                if m > len(rank):
+                    break
+                p = 0
+                for x in range(0, self.dlg.listWidget.count()):
+                    # if a layer is selected do the following
+                    if self.dlg.listWidget.item(x).isSelected():
+                        p = p + 1
+                        # if the rank number we want matches the file process it
+                        if m == rank[p-1]:
+                            #go through all the layers in the layers tree
+                            for search_layer in QgsProject.instance().layerTreeRoot().children():
+                                # if the name of one of the layers selected matches a layer in the tree do the following
+                                if search_layer.name() == self.dlg.listWidget.item(x).text():
+                                    rasterLayer = search_layer.layer()
+
+                                    #get the stats for each grid cell
+                                    coverStatistics = QgsZonalStatistics( vectorLayer, rasterLayer)
+                                    statistics = coverStatistics.calculateStatistics(None)
+                                    vectorLayer.updateFields()
+                                    vectorLayer.commitChanges()
+                                    
+                                    #Get ther fields form the layer
+                                    fields = vectorLayer.fields()
+                                    fieldNames = [field.name() for field in fields]
+                                    
+                                    # QgsZonalStatistics will gennerate 3 columns that last one is mean which we want
+                                    # rename the last column (mean) to the name we want
+                                    vectorLayer.setFieldAlias(len(fieldNames)-1,rasterLayer.name())
+                                    
+                                    # delete the other 2 fields made by the stats algo (the third to last and second to last)
+                                    fList = list()
+                                    fList.append(len(fieldNames)-2)
+                                    fList.append(len(fieldNames)-3)
+                                    vectorLayer.dataProvider().deleteAttributes(fList)
+                                    vectorLayer.updateFields()
+                                    vectorLayer.commitChanges()
                     
             #open the output file for writting
             outputFile = open(fileName, 'w')
@@ -329,7 +364,7 @@ class inSALMOPlugin:
                 text = text + flow2[0] + "@" + flow2[1:] +"\t"
             text = text + "\n"
 
-            # itterate over the features
+            # itterate over the features i.e. each cell
             for feature in features:
                 geom = feature.geometry()
                 # get the vertices
