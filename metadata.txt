@@ -6,7 +6,7 @@
 name=Hydro Generator
 qgisMinimumVersion=3.0
 description=Makes the hydrology file for inSALMO
-version=0.1
+version=0.2
 author=Peter N. Dudley
 email=pndphd@gmail.com
 

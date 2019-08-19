@@ -209,16 +209,24 @@ class inSALMOPlugin:
         self.dlg.pushButton.clicked.connect(self.select_output_file)
         
         #Load the vector layers into ther combo box
-        layers = QgsProject.instance().layerTreeRoot().children()
+        layerIDs = QgsProject.instance().layerTreeRoot().findLayerIds()
+        
+        initLayerList = []
+        for layerID in layerIDs:
+            initLayerList.append(QgsProject.instance().mapLayer(layerID))
+        layers = initLayerList 
+
+        
+        #layers = QgsProject.instance().layerTreeRoot().children()
         layer_list = []
         self.dlg.comboBox.clear()
-        for layer in layers:
+        for layer in initLayerList:
             layer_list.append(layer.name())
         self.dlg.comboBox.addItems(layer_list)
         
         # Load the rasters
-        for layerCount in layers:
-            layer = layerCount.layer()
+        for layer in initLayerList:
+            #layer = layerCount.layer()
             # check to see if it is raster (type ==1)
             if layer.type() == 1 :
                 self.dlg.listWidget.addItem(layer.name())
@@ -249,7 +257,7 @@ class inSALMOPlugin:
 			
             #get the vector layer you want form the selection box 
             selectedLayerIndex = self.dlg.comboBox.currentIndex()
-            vectorLayer = layers[selectedLayerIndex].layer()
+            vectorLayer = layers[selectedLayerIndex]
 
             # delete all attributes currently in the layer
             fList = list()
@@ -295,10 +303,10 @@ class inSALMOPlugin:
                         # if the rank number we want matches the file process it
                         if m == rank[p-1]:
                             #go through all the layers in the layers tree
-                            for search_layer in QgsProject.instance().layerTreeRoot().children():
+                            for search_layer in layers:
                                 # if the name of one of the layers selected matches a layer in the tree do the following
                                 if search_layer.name() == self.dlg.listWidget.item(x).text():
-                                    rasterLayer = search_layer.layer()
+                                    rasterLayer = search_layer
 
                                     #get the stats for each grid cell
                                     coverStatistics = QgsZonalStatistics( vectorLayer, rasterLayer)
